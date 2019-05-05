@@ -1,0 +1,28 @@
+{
+  "name": "venmo-scrapper",
+  "version": "1.0.0",
+  "description": "scrapes from venmo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cjoshmartin/venmo-scrapper.git"
+  },
+  "keywords": [
+    "venmo",
+    "payments",
+    "scrapping"
+  ],
+  "author": "Josh Martin",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/cjoshmartin/venmo-scrapper/issues"
+  },
+  "homepage": "https://github.com/cjoshmartin/venmo-scrapper#readme",
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "puppeteer": "^1.15.0"
+  }
+}
