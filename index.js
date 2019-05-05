@@ -1,9 +1,17 @@
 const puppeteer = require('puppeteer');
 const { utils } = require("./utils");
+const admin = require("firebase-admin");
 
 require('dotenv').config();
 
-function parseBool(val) { return val === true || val === "true" }
+const _admin_data = JSON.parse(process.env.SERVICE_API_KEY)
+
+admin.initializeApp({
+    credential: admin.credential.cert(_admin_data),
+    databaseURL:process.env.DATABASE_URL
+});
+
+const db = admin.database()
 
 exports.getPayments = async (req, res) => {
     getData(req, res)
@@ -19,7 +27,6 @@ const getData = async (req, res) => {
     const browser = await puppeteer.launch(
         {
             args: ['--no-sandbox'],
-            headless: false,
         }
     )
 
@@ -92,8 +99,8 @@ const getData = async (req, res) => {
     }, paymentsSelector ) 
 
     console.log(JSON.stringify(paymentsDiv, ' ', 4))
+    db.ref('/').set(paymentsDiv)
     await funcs.closeBrowser()
-
     //res.set('Content-Type','application/json')
     //res.send(funcs.getStatus(userData.rate))
 }

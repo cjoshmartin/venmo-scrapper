@@ -25,6 +25,10 @@ class utils {
     async closeBrowser() {
         await this.browser.close();
     }
+
+    parseBool(val) {
+        return val === true || val === "true"
+    }
 }
 
 exports.utils = utils;
