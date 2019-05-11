@@ -10,7 +10,6 @@ admin.initializeApp({
     credential: admin.credential.cert(_admin_data),
     databaseURL:process.env.DATABASE_URL
 });
-
 const db = admin.database()
 
 exports.getPayments = async (req, res) => {
@@ -27,7 +26,8 @@ const getData = async (req, res) => {
     const browser = await puppeteer.launch(
         {
             args: ['--no-sandbox'],
-        }
+            //headless: false,
+        },
     )
 
     const page = await browser.newPage()
@@ -69,38 +69,52 @@ const getData = async (req, res) => {
 
     const  paymentsDiv = await page.evaluate((selector) => {
         const payments =  document.querySelectorAll(selector)
-        const values = {}
-        payments.forEach((el)=>{
+        const values = {
+            users: {},
+            payments: {},
+        };
+
+        payments.forEach( (el) => {
+
             const item = el.querySelector("tr")
             const name_pic_selector = item.querySelector("div.relative > a.bold")
+
             if (item.querySelector('span.green') !== null){
-                const data = {
-                    date: el.attributes[1].value,
-                    name: (name_pic_selector.attributes[1].value).toLowerCase().replace(' ', '-'), 
-                    img: name_pic_selector.querySelector("img").attributes["src"].value,
-                    amount: parseFloat((item.querySelector('span.green').innerText).substring(2)), // need to make this only if it is `.green`
-                    message: el.querySelector('div[style="word-wrap:break-word"]').innerText
-                }
-                if (values[data.name] !== undefined){
-                    values[data.name].total += data.amount
+                const username = name_pic_selector.attributes[0].value.substring(1)
+                const date_of_transaction = el.attributes[1].value;
+                const amount = parseFloat((item.querySelector('span.green').innerText).substring(2))
+                const message = el.querySelector('div[style="word-wrap:break-word"]').innerText
+                const profile_picture = name_pic_selector.querySelector("img").attributes["src"].value
+
+                if (values["users"][username] !== undefined){
+                    values["users"][username]["total"] += amount
+                    values["users"][username]["usage"].push(date_of_transaction)
                 }
                 else {
-                    values[data.name] = {
-                        profile_picture: data.img,
-                        total: data.amount,
-                        payments: {},
+                    values["users"][username] = {
+                        profile_picture,
+                        total: amount,
+                        usage: [date_of_transaction]
                     }
                 }
 
-                values[data.name].payments[data.date] =  { amount: data.amount, message: data.message }
-            }
-        })
+                values["payments"][date_of_transaction] =  {
+                    username,
+                    amount,
+                    message,
+                }
+
+            } // end of transaction
+        }
+        )
         return values
     }, paymentsSelector ) 
 
     console.log(JSON.stringify(paymentsDiv, ' ', 4))
-    db.ref('/').set(paymentsDiv)
     await funcs.closeBrowser()
+
+    db.ref('/').update(paymentsDiv)
+    db.ref('/').off()
     //res.set('Content-Type','application/json')
     //res.send(funcs.getStatus(userData.rate))
 }
