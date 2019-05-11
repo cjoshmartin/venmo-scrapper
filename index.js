@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const _admin_data = JSON.parse(process.env.SERVICE_API_KEY)
 
-admin.initializeApp({
+const app = admin.initializeApp({
     credential: admin.credential.cert(_admin_data),
     databaseURL:process.env.DATABASE_URL
 });
@@ -114,7 +114,7 @@ const getData = async (req, res) => {
     await funcs.closeBrowser()
 
     db.ref('/').update(paymentsDiv)
-    db.ref('/').off()
+    app.delete();
     //res.set('Content-Type','application/json')
     //res.send(funcs.getStatus(userData.rate))
 }
