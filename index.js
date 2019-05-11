@@ -22,6 +22,7 @@ const requested_information = {
 
 
 const getData = async (req, res) => {
+
     const userData = req.query;
     const browser = await puppeteer.launch(
         {
@@ -66,10 +67,13 @@ const getData = async (req, res) => {
 
     const paymentsSelector = 'div#profile_feed_container > .p_twenty_r'
     await funcs.waitForSelector(paymentsSelector)
-
-    const  paymentsDiv = await page.evaluate((selector) => {
+    
+    const refs = db.ref("/")
+    const fir_data = await refs.once('value', (snapshot) => {}).then((data) => data.toJSON()); // I want a global var here
+    console.log(fir_data)
+    const  paymentsDiv = await page.evaluate((selector, fir_data) => {
         const payments =  document.querySelectorAll(selector)
-        const values = {
+        const values =   fir_data !== undefined && fir_data['payments'] !== undefined ? fir_data : {
             users: {},
             payments: {},
         };
@@ -108,9 +112,9 @@ const getData = async (req, res) => {
         }
         )
         return values
-    }, paymentsSelector ) 
+    }, paymentsSelector, fir_data ) 
 
-    console.log(JSON.stringify(paymentsDiv, ' ', 4))
+    //console.log(JSON.stringify(paymentsDiv, ' ', 4))
     await funcs.closeBrowser()
 
     db.ref('/').update(paymentsDiv)
