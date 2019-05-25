@@ -67,31 +67,68 @@ const getData = async (req, res) => {
 
     const paymentsSelector = 'div#profile_feed_container > .p_twenty_r'
     await funcs.waitForSelector(paymentsSelector)
-    
+
+    const moreButtonSelector = ".moreButton"
+    await funcs.waitForSelector(moreButtonSelector)
+
+    await page.evaluate(async (selector) => {
+        const sleep = (milliseconds) => {
+            return new Promise(resolve => setTimeout(resolve, milliseconds))
+        }
+        await sleep(1000)
+        while (document.querySelector(selector).innerText !== "No more payments"){
+            console.log(document.querySelector(".moreButton").innerText)
+            venmo.feed.loadMoreStories('profile_feed');    
+            await sleep(1000)
+        }
+    }, moreButtonSelector)
+
     const refs = db.ref("/")
     const fir_data = await refs.once('value', (snapshot) => {}).then((data) => data.toJSON()); // I want a global var here
-    console.log(fir_data)
     const  paymentsDiv = await page.evaluate((selector, fir_data) => {
         const payments =  document.querySelectorAll(selector)
-        const values =   fir_data !== undefined && fir_data['payments'] !== undefined ? fir_data : {
-            users: {},
-            payments: {},
-        };
+        const values =   (
+            fir_data !== null 
+            && fir_data !== undefined 
+            && fir_data["payments"] !== null 
+            && fir_data["payments"] !== undefined 
+        ) 
+            ? fir_data 
+            : {
+                "past-payment": [], 
+                users: {},
+                payments: {},
+            };
 
-        payments.forEach( (el) => {
+        payments.forEach((el) => {
 
             const item = el.querySelector("tr")
             const name_pic_selector = item.querySelector("div.relative > a.bold")
+            const date_of_transaction = el.attributes[1].value;
+            const is_past_payments_empty = values["past-payments"] !== null && values["past-payments"] !== undefined 
+            const payments_set = new Set(
+                (
+                    Array.isArray(values["past-payments"]) 
+                    ? values["past-payments"] 
+                    : Object.values(values["past-payments"])
+                ) // end of tur
+            ) // end of set
+
+            const is_past_payment = is_past_payments_empty && payments_set.has(date_of_transaction) 
+
+            if (is_past_payment) {
+                return values;
+            }	
 
             if (item.querySelector('span.green') !== null){
                 const username = name_pic_selector.attributes[0].value.substring(1)
-                const date_of_transaction = el.attributes[1].value;
                 const amount = parseFloat((item.querySelector('span.green').innerText).substring(2))
                 const message = el.querySelector('div[style="word-wrap:break-word"]').innerText
                 const profile_picture = name_pic_selector.querySelector("img").attributes["src"].value
 
                 if (values["users"][username] !== undefined){
                     values["users"][username]["total"] += amount
+                    values["users"][username]["usage"] = Object.values(values["users"][username]["usage"])
                     values["users"][username]["usage"].push(date_of_transaction)
                 }
                 else {
@@ -109,18 +146,18 @@ const getData = async (req, res) => {
                 }
 
             } // end of transaction
-        }
-        )
+        } // end of ForEach
+        ) // end of ForEach
         return values
-    }, paymentsSelector, fir_data ) 
+    }, paymentsSelector, fir_data )  //end of ForEach
 
-    //console.log(JSON.stringify(paymentsDiv, ' ', 4))
+    console.log(JSON.stringify(paymentsDiv, ' ', 4))
+
+    console.log("DONE SCRAPPING!")
     await funcs.closeBrowser()
 
     db.ref('/').update(paymentsDiv)
     app.delete();
-    //res.set('Content-Type','application/json')
-    //res.send(funcs.getStatus(userData.rate))
 }
 
 getData(requested_information, null);
