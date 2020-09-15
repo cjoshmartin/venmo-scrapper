@@ -20,18 +20,28 @@ const requested_information = {
     query: { },
 }
 
+function promisedBasedSleep(milliseconds) {
+    console.log(`sleeping for ${milliseconds}ms`);
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+  }
 
 const getData = async (req, res) => {
 
     const userData = req.query;
     const browser = await puppeteer.launch(
         {
-            args: ['--no-sandbox'],
-            //headless: false,
+            args: ['--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--window-size=1920x1080'],
+            headless: true,
+            slowMo: 10,
         },
     )
 
-    const page = await browser.newPage()
+    const page = (await browser.pages())[0]
     const funcs = await new utils(browser, page)
 
     await funcs.page.goto('https://venmo.com/account/sign-in/')
@@ -51,11 +61,23 @@ const getData = async (req, res) => {
     const clockActionSelector = 'p.link > a'
     await funcs.waitForSelector(clockActionSelector)
     await funcs.clickButton(clockActionSelector)
+    
+    promisedBasedSleep(3000)
 
-    const bankAccountSelector ='input[name="bankAccountNumber"]'
+    // Confirm using my card instead
+    await funcs.waitForSelector(clockActionSelector)
+    await funcs.clickButton(clockActionSelector)
+
+    await promisedBasedSleep(1000)
+    const bankAccountSelector ='input[name="cardNumber"]'
     await funcs.waitForSelector(bankAccountSelector)
-    await page.type('input[name="bankAccountNumber"]', process.env.BANKING_NUMBER)
+    await page.type(bankAccountSelector, process.env.CARD_NUMBER)
+    await promisedBasedSleep(1000)
+    await page.type('input[name="expirationDate"]', process.env.CARD_NUMBER_EXP)
+    await promisedBasedSleep(1000)
     await funcs.clickButton(form.submit)
+
+    promisedBasedSleep(3000)
 
     const notNowSelector ='button.mfa-button-do-not-remember'
     await funcs.waitForSelector(notNowSelector)
@@ -156,8 +178,9 @@ const getData = async (req, res) => {
     console.log("DONE SCRAPPING!")
     await funcs.closeBrowser()
 
-    db.ref('/').update(paymentsDiv)
+    // db.ref('/').update(paymentsDiv)
     app.delete();
+    return;
 }
 
 getData(requested_information, null);
