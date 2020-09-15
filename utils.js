@@ -10,6 +10,7 @@ class utils {
         await this.page.evaluate(_clickButton, field);
     }
     async login(username, password, form) {
+        this.waitForSelector(form.submit)
         await this.page.type(form.username, username);
         await this.page.type(form.password, password);
         this.clickButton(form.submit);
