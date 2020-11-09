@@ -3,3 +3,5 @@
 node_modules/*
 *.old.*
 example_output.json
+
+dist/*
