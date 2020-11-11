@@ -4,6 +4,8 @@ import { blockedResourceTypes, skippedResources } from './blockRequestContent';
 // @ts-ignore
 const clickButton = (selector: string) => { document.querySelector(selector).click(); };
 
+type NullableType<T> = T | null
+
 export interface LoginForm {
   readonly username: string;
   readonly password: string;
@@ -55,7 +57,12 @@ class Utils {
   }
 
   async clickButton(field: string) {
-    await this.page.evaluate(clickButton, field);
+      console.log(`clicking: ${field}`)
+    const element = await this.page.$(field);
+      await element.click({
+        delay: 500
+      })
+      console.log('Clicked')
   }
   async clickSubmit() {
     await this.clickButton('button[type="submit"]');
@@ -85,7 +92,7 @@ class Utils {
 
       if (isSearchElement) {
         await Utils.promisedBasedSleep(sleepTime);
-        selector.click();
+        await selector.click();
         return selector;
       }
     }
@@ -100,8 +107,16 @@ class Utils {
   }
 
   async login(username: string, password: string, form: LoginForm) {
+    await this.clickButton(form.username);
+    await Utils.promisedBasedSleep(1000);
     await this.page.type(form.username, username);
+    await Utils.promisedBasedSleep(1000);
+    await this.clickButton(form.password);
+    await Utils.promisedBasedSleep(1000);
     await this.page.type(form.password, password);
+    await Utils.promisedBasedSleep(1000);
+    await this.page.hover(form.submit);
+    await Utils.promisedBasedSleep(1000);
     await this.clickButton(form.submit);
   }
 
@@ -122,12 +137,27 @@ class Utils {
     }
   }
 
-  async waitAndClick(selector: string) {
-    this.waitForSelector(selector);
-    this.clickButton(selector);
+  async waitAndClick(cssSelector: string) {
+    console.log(`trying to css click: ${cssSelector}`)
+    await this.waitForSelector(cssSelector);
+    await this.clickButton(cssSelector);
+  }
+
+  async xpathWaitAndClick(xpathSelector: string){
+    console.log(`trying to xpath click: ${xpathSelector}`)
+    await this.page.waitForXPath(xpathSelector)
+    const possibleElements: Array<ElementHandle> = await this.page.$x(xpathSelector)
+      if(possibleElements.length > 0){
+        console.log(`found ${xpathSelector} using xpath`)
+        const element: ElementHandle = possibleElements[0]
+        await element.click()
+        console.log(`click`)
+      }else{
+        throw `cannot find ${xpathSelector}`
+      }
   }
   async navigateTo(url: string) {
-    this.page.goto(url);
+    await this.page.goto(url);
   }
   async closeBrowser() {
     await this.browser.close();

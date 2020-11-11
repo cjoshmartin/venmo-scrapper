@@ -8,7 +8,7 @@ const config: LaunchOptions = {
     '--disable-gpu',
     '--window-size=1920x1080'],
   headless: false,
-  slowMo: 10,
+  slowMo: 30,
 };
 
 export default  config;

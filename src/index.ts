@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer';
 import utils, { LoginForm } from './utils';
 import firebaseAdmin from 'firebase-admin';
 
@@ -65,7 +64,7 @@ class Venmo extends utils {
     await this.navigateTo('https://venmo.com/account/sign-in/');
     await Venmo.promisedBasedSleep(3000);
     await this.login(
-        process.env.USERNAME,
+        process.env.VENMO_USERNAME,
         process.env.PASSWORD,
         form,
     );
@@ -73,7 +72,7 @@ class Venmo extends utils {
     // TODO: add check for verification
     await this.verification();
 
-    await this.waitForHomePage();
+    // await this.waitForHomePage();
   }
 
   // ----------------------------------------------------------------
@@ -96,16 +95,18 @@ class Venmo extends utils {
   }
 
   public async verification() {
-
-    const clockActionSelector = 'p.link > a';
-    await this.waitAndClick(clockActionSelector);
-
     await Venmo.promisedBasedSleep(3000);
 
     // Confirm using my card instead
-    await this.waitAndClick(clockActionSelector);
+    const IDontHaveAccessLink = "p.link > a"
+    await this.waitAndClick(IDontHaveAccessLink);
 
-    await Venmo.promisedBasedSleep(1000);
+    await Venmo.promisedBasedSleep(3000);
+
+    const confirmUsingMyCardInsteadLink = "p.link > a"
+    await this.waitAndClick(confirmUsingMyCardInsteadLink);
+
+    await Venmo.promisedBasedSleep(3000);
 
     await this.enterCreditCardForVerification(process.env.CARD_NUMBER, process.env.CARD_NUMBER_EXP);
 
