@@ -23,7 +23,7 @@
   "homepage": "https://github.com/cjoshmartin/venmo-scrapper#readme",
   "dependencies": {
     "dotenv": "^8.0.0",
-    "firebase-admin": "^7.3.0",
+    "firebase-admin": "^11.4.1",
     "puppeteer": "^1.15.0"
   }
 }
